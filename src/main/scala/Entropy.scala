@@ -1,26 +1,3 @@
-  /**Entropy calculations relevant to Ch 3 DataScience for Business\
-   * the PURPOSE of this approach (Information Gain), is to identify the most impactful features on which to segment your
-   * training set. (NOTE: the code below is strictly scala, no Spark, so it will run anywhere a scala compiler runs
-   * e.g., Why is this important? Say you are given 100 or 200 COLUMNS of features, which features
-   * should you start to segment on ( dont' say the computer will 'figure this our for you,
-   * you have to make some configuration decisions too??!!,
-   *Chapter 3 of Datascience text has entropy calculations and discussions
-   * I start with the stick figure example and the start another example below that
-   * for your completion in class
-   * Below is a binary calculation where I consider that a 'label' is either 'x' or 'y ( + or - ) in a TRAINING SET of 3
-   * features { body type, head type, color} and an associated label of + or -
-   * ** I use the abbreviation 'nr' for number
-   * ********a mini LOG tutorial FYI -- how to get a ln2 function if you only have log10 function? *************
-   * NOTE: at its most basic, a LOG IS an exponent! it's' the number applied to a base number to get a specified value
-   * e.g.say I want to represent 128 as some power of 2: that 'power' IS the exponent
-   * 128 = 2 ^ exponent, that is, 2 raised to the exponent 7 gives 128, that exponent IS ln2(128), this IS the log of 128
-   * to the base '2'
-   * So, If I only have a log10 function I can still get a ln2 function: as follows:
-   * start with some number, say, x = 2 ^ ln2(x), then take log10 of both sides to get ln2(x) = ??? (see ln2 below
-   * ****** ENTROPY basic calcs
-   * 'entropy' is my function to calc Entropy
-   * 2020-09-29 rr
-   */
   import scala.math._
   object Entropy extends App{
     type D = Double ; type I = Integer; type B = Boolean ; type S = String
