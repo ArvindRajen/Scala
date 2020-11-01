@@ -14,7 +14,7 @@ import org.apache.spark.ml.linalg.{ Vectors, Vector}
 import org.apache.spark.ml.classification.LogisticRegression
 import org.apache.spark.mllib.evaluation.MulticlassMetrics
 
-object Assignment10 extends App{
+object Assignment11 extends App{
 
   Logger.getLogger("org").setLevel(Level.OFF)
   type I = Int ; type S = String; type D = Double; type B = Boolean
