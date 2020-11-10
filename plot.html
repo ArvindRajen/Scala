@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>grouped Bar Chart</title>
+<script src="https://cdn.plot.ly/plotly-1.52.2.min.js"></script>
+</head>
+<body>
+<div id="chart"></div>
+<script>
+(function () {
+  var data0 = {"x":["giraffes","orangutans","monkeys"],"name":"SF Zoo","y":[20.0,14.0,23.0],"type":"bar"};
+  var data1 = {"x":["giraffes","orangutans","monkeys"],"name":"LA Zoo","y":[12.0,18.0,29.0],"type":"bar"};
+
+  var data = [data0, data1];
+  var layout = {"title":"grouped Bar Chart"};
+ var config = {"showEditInChartStudio":false,"responsive":false,"editable":false};
+
+  Plotly.plot('chart', data, layout, config);
+})();
+</script>
+</body>
+</html>
+       

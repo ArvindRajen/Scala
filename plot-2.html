@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title> Filled plot </title>
+<script src="https://cdn.plot.ly/plotly-1.52.2.min.js"></script>
+</head>
+<body>
+<div id="chart"></div>
+<script>
+(function () {
+  var data0 = {"x":[1.0,2.0,3.0,4.0],"y":[0.0,2.0,3.0,5.0],"fill":"tozeroy","type":"scatter"};
+  var data1 = {"x":[1.0,2.0,3.0,4.0],"y":[3.0,5.0,1.0,7.0],"fill":"tonexty","type":"scatter"};
+
+  var data = [data0, data1];
+  var layout = {"title":" Filled plot "};
+ var config = {"showEditInChartStudio":false,"responsive":false,"editable":false};
+
+  Plotly.plot('chart', data, layout, config);
+})();
+</script>
+</body>
+</html>
+       

@@ -47,9 +47,6 @@ object Assignment11 extends App{
 
   // train logistic regression model with training data set
   val logisticRegression = new LogisticRegression()
-    .setElasticNetParam(0.8)
-    .setRegParam(0.3)
-    .setMaxIter(10)
   val logisticRegressionModel = logisticRegression.fit(labelDf)
 
   // Print the coefficients and intercept for linear regression
