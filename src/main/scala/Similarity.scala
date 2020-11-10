@@ -3,15 +3,16 @@
 Based on the DS Fawcett text Ch 6 Table 6.1, where a target person's
 label ( 1/0) is estimated by "K" nearest neighbors.
 
- I have set up a case class with the features ( age, income, Nrcards, label
- plus three extra components, distance, reciprocalDistanceSquared, contribution
- these will be filled out sequentially. I illustrate the  Functional programming mantra
- of not mutating variables, but  create a new person list at each stage. **Check this out ***
+I have set up a case class with the features  age, income, Nrcards, label
+plus four extra components, distance, reciprocalDistanceSquared, contribution, cosine
+these will be filled out sequentially. I illustrate the  Functional programming mantra
+of not mutating variables, but  create a new person list at each stage. **Check this out ***
 
- These operations below match what out text does in order to determine what contribution
- each person makes to determining the estimated label for a target person.
+These operations below match what out text does in order to determine what contribution
+each person makes to determining the estimated label for a target person.
 
  */
+
 package apps
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.{SparkConf, SparkContext}
@@ -23,17 +24,17 @@ import scala.math._
 
 object Similarity extends App {
   Logger.getLogger("org").setLevel(Level.OFF)
-  val spark = SparkSession.builder .master("local[*]").appName("IFT598Similarity") .getOrCreate()
+  val spark = SparkSession.builder .master("local[*]").appName("Similarity") .getOrCreate()
   import spark.implicits._
 
-  //  ****** utility functions that could be created in a separate object,  and then imported in
+  // Function to pair distance for easier computation.
   def pairDistances ( p : P,  q : P  ):Double = {
     val  (a1, i1, c1)  = (p.age, p.income, p.cards)
     val (a2, i2, c2)  = (q.age, q.income,  q.cards)
     sqrt(pow((a1 - a2), 2) + pow((i1 - i2) ,2) + pow(( c1 - c2), 2) )
   }
 
-  // Cosine Similarity needs both dot product and Norm of the points.
+  // Cosine Similarity tells you the similarity of points regardless of magnitude.
   def cosineSimilarity(p: P, q : P) : Double = {
     val  (a1, i1, c1)  = (p.age, p.income, p.cards)
     val (a2, i2, c2)  = (q.age, q.income,  q.cards)
@@ -43,18 +44,21 @@ object Similarity extends App {
     1 - (dot/(normP*normQ))
   }
 
-  // Now, replace the default 0 distance from the target, with the calculated distance.
+  // Replacing the default 0 distance from the target, with the new calculated distance.
   def  AddDistances( target: P, persons: List[P]) :List[P] =
     persons. map{ p => { val d =pairDistances( target, p)
       p.copy( distance = d ) } }
 
-  // now given a new person list that has distances filled out, calc and add in the recip dist sqrd
+  // Now the input is a new person list that has distances filled out, calculate and add in the reciprocal distance squared
+  // Summing the reciprocal distance and extracting the individual contributions of the different people in the dataset to see
+  //which points contribute more to the data Point David, is it the further points or the nearer ones.
+
   def AddReciprocalDistances( personsWithDistance : List[P] ) : List[P] = {
     personsWithDistance.map{ p => {
       val d = p.distance
       val recipDist2 =  if (d != 0.0)  1/( d * d) else 0.0
       p.copy( recipDistanceSquared = recipDist2 )
-    } }  }
+    } } }
 
   def SumReciprocalDistances( personsWithReciprocalDistances : List[ P ]) =
     personsWithReciprocalDistances.map{ _.recipDistanceSquared}.sum
@@ -70,6 +74,7 @@ object Similarity extends App {
       p.copy( cosine = c ) } }
 
   // ****************  END Utility functions ********************
+
   val fn = "/Users/arvin/Desktop/similarityDSCh6.csv"
   //> fn  : String = c:/aaprograms/datasets/similarityDSCh6.csv
   val mySchema = StructType( Array(StructField("name", StringType, false),
@@ -82,6 +87,7 @@ object Similarity extends App {
     StructField("contribution",DoubleType, false),
     StructField("cosine",DoubleType, false)
   ))
+
   val rawData = spark.read.format("csv").option("header", "false").schema(mySchema).load(fn)
   rawData.show()
   val ds = rawData.as[P]
@@ -93,26 +99,25 @@ object Similarity extends App {
   print("\n--------------------------------------------------------")
 
   personsWithDistances. sortBy( _ .distance)
-    .foreach{  p =>  println(f"\n${p.name}%10s | ${p.age}%3.2f | ${p.income}%3.2f | ${p.distance}%4.3f")
+    .foreach{  p =>  println(f"\nName ${p.name}%10s |  Age ${p.age}%3.2f | Income ${p.income}%3.2f | No.of Cards ${p.cards} | Distance ${p.distance}%4.3f")
     }
-  // use the other utility functions ( or your own) to calculate
-  // a. the reciprocal squared distances , then the total of these   reciprocal  squared distances, and then the contribution of each
-  //. sort and print your result in a
+
+  //Using our functions to calculate the distance between the data points.
   val personsWithRecip =AddReciprocalDistances( personsWithDistances)
   val sumReciprocals = SumReciprocalDistances( personsWithRecip)
   val personsWithContributions =AddContributions( personsWithRecip, sumReciprocals : Double )
   val personsWithCosinesAdded = AddCosines(targetDavid, personsWithContributions)
 
   print("\n--------------------------------------------------------")
-  val personsWithCosinesSorted =personsWithCosinesAdded. sortBy( p => (p .name, p.cosine ))
+  val personsWithCosinesSorted =personsWithCosinesAdded. sortBy( p => (p .distance, p.cosine ))
     .foreach{  p =>  println(f"\n${p.name}%10s | Distance ${p.distance}%3.2f | Contribution ${p.contribution}%5.2f | Cosine Distance ${p.cosine}%5.3f | Label/Response ${p.label}%2.1f") }
 
   //now calc the contributions to the yes's and the contributions to the no's
   val contributionsToYes = (personsWithContributions.filter( p => p.label == 1)).map{ p => p.contribution} . sum
   val contributionsToNo = (personsWithContributions.filter( p => p.label == 0)).map{ p => p.contribution} . sum
   print("\n--------------------------------------------------------")
-  print(s"\nContribution to Yes For David : $contributionsToYes")
-  print(s"\nContribution to No For David : $contributionsToNo")
+  print(f"\nContribution to Yes For David : ${contributionsToYes}%3.2f")
+  print(f"\nContribution to No For David : ${contributionsToNo}%3.2f")
   if (contributionsToNo > contributionsToYes) print("\nDavid Will Say NO") else print("\nDavid Will Say YES")
 
 }//end similarity
