@@ -110,7 +110,7 @@ object Similarity extends App {
 
   print("\n--------------------------------------------------------")
   val personsWithCosinesSorted =personsWithCosinesAdded. sortBy( p => (p .distance, p.cosine ))
-    .foreach{  p =>  println(f"\n${p.name}%10s | Distance ${p.distance}%3.2f | Contribution ${p.contribution}%5.2f | Cosine Distance ${p.cosine}%5.3f | Label/Response ${p.label}%2.1f") }
+    .foreach{  p =>  println(f"\nName ${p.name}%10s | Distance ${p.distance}%3.2f | Contribution ${p.contribution}%5.2f | Cosine Distance ${p.cosine}%5.3f | Label/Response ${p.label}%2.1f") }
 
   //now calc the contributions to the yes's and the contributions to the no's
   val contributionsToYes = (personsWithContributions.filter( p => p.label == 1)).map{ p => p.contribution} . sum
