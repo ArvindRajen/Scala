@@ -34,16 +34,6 @@ object Similarity extends App {
     sqrt(pow((a1 - a2), 2) + pow((i1 - i2) ,2) + pow(( c1 - c2), 2) )
   }
 
-  // Cosine Similarity tells you the similarity of points regardless of magnitude.
-  def cosineSimilarity(p: P, q : P) : Double = {
-    val  (a1, i1, c1)  = (p.age, p.income, p.cards)
-    val (a2, i2, c2)  = (q.age, q.income,  q.cards)
-    val dot = a1*a2 + i1*i2 + c1*c2
-    val normP = sqrt(pow(a1,2) + pow(i1,2) + pow(c1,2))
-    val normQ = sqrt(pow(a2,2) + pow(i2,2) + pow(c2,2))
-    1 - (dot/(normP*normQ))
-  }
-
   // Replacing the default 0 distance from the target, with the new calculated distance.
   def  AddDistances( target: P, persons: List[P]) :List[P] =
     persons. map{ p => { val d =pairDistances( target, p)
@@ -68,15 +58,9 @@ object Similarity extends App {
       p.copy(contribution = p.recipDistanceSquared/sumRecips)
     }
 
-  // Now, replace the default 0 distance from the target, with the calculated distance.
-  def  AddCosines( target: P, persons: List[P]) :List[P] =
-    persons. map{ p => { val c =cosineSimilarity( target, p)
-      p.copy( cosine = c ) } }
-
   // ****************  END Utility functions ********************
 
   val fn = "/Users/arvin/Desktop/similarityDSCh6.csv"
-  //> fn  : String = c:/aaprograms/datasets/similarityDSCh6.csv
   val mySchema = StructType( Array(StructField("name", StringType, false),
     StructField("age", DoubleType, false),
     StructField("income", DoubleType, false),
@@ -84,8 +68,7 @@ object Similarity extends App {
     StructField("label", DoubleType, false),
     StructField("distance",DoubleType, false),
     StructField("recipDistanceSquared",DoubleType, false),
-    StructField("contribution",DoubleType, false),
-    StructField("cosine",DoubleType, false)
+    StructField("contribution",DoubleType, false)
   ))
 
   val rawData = spark.read.format("csv").option("header", "false").schema(mySchema).load(fn)
@@ -106,11 +89,15 @@ object Similarity extends App {
   val personsWithRecip =AddReciprocalDistances( personsWithDistances)
   val sumReciprocals = SumReciprocalDistances( personsWithRecip)
   val personsWithContributions =AddContributions( personsWithRecip, sumReciprocals : Double )
-  val personsWithCosinesAdded = AddCosines(targetDavid, personsWithContributions)
+
 
   print("\n--------------------------------------------------------")
-  val personsWithCosinesSorted =personsWithCosinesAdded. sortBy( p => (p .distance, p.cosine ))
-    .foreach{  p =>  println(f"\nName ${p.name}%10s | Distance ${p.distance}%3.2f | Contribution ${p.contribution}%5.2f | Cosine Distance ${p.cosine}%5.3f | Label/Response ${p.label}%2.1f") }
+  val personsWithRecipSorted =personsWithRecip. sortBy( p => (p.recipDistanceSquared, p .distance))
+    .foreach{  p =>  println(f"\nName ${p.name}%10s | Distance ${p.distance}%3.2f | Reciprocal Weights ${p.recipDistanceSquared}%6.6f | Label/Response ${p.label}%2.1f") }
+
+  print("\n--------------------------------------------------------")
+  val personsWithContributionsSorted =personsWithContributions. sortBy( p => (p.contribution, p .distance))
+    .foreach{  p =>  println(f"\nName ${p.name}%10s | Distance ${p.distance}%3.2f | Contribution ${p.contribution}%5.2f | Label/Response ${p.label}%2.1f") }
 
   //now calc the contributions to the yes's and the contributions to the no's
   val contributionsToYes = (personsWithContributions.filter( p => p.label == 1)).map{ p => p.contribution} . sum
@@ -123,4 +110,4 @@ object Similarity extends App {
 }//end similarity
 case class P( name: String, age: Double, income : Double, cards: Double,
               label : Double, distance : Double,
-              recipDistanceSquared : Double , contribution : Double, cosine : Double)
+              recipDistanceSquared : Double , contribution : Double)
